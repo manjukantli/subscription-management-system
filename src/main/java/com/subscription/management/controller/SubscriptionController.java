@@ -44,4 +44,46 @@ public class SubscriptionController {
 
         return ResponseEntity.ok(subscriptions);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<SubscriptionResponse> getSubscriptionById(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        SubscriptionResponse response =
+                subscriptionService.getSubscriptionById(id, email);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<SubscriptionResponse> updateSubscription(
+            @PathVariable Long id,
+            @Valid @RequestBody SubscriptionRequest request,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        SubscriptionResponse response =
+                subscriptionService.updateSubscription(
+                        id,
+                        request,
+                        email);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteSubscription(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        subscriptionService.deleteSubscription(id, email);
+
+        return ResponseEntity.ok("Subscription deleted successfully");
+    }
 }

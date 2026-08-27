@@ -55,6 +55,70 @@ public class SubscriptionService {
                 .toList();
     }
 
+    public SubscriptionResponse getSubscriptionById(
+            Long id,
+            String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Subscription subscription = subscriptionRepository
+                .findById(id)
+                .orElseThrow(() -> new RuntimeException("Subscription not found"));
+
+        if (!subscription.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Access denied");
+        }
+
+        return convertToResponse(subscription);
+    }
+
+    public SubscriptionResponse updateSubscription(
+            Long id,
+            SubscriptionRequest request,
+            String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Subscription subscription = subscriptionRepository
+                .findById(id)
+                .orElseThrow(() -> new RuntimeException("Subscription not found"));
+
+        if (!subscription.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Access denied");
+        }
+
+        subscription.setServiceName(request.getServiceName());
+        subscription.setCost(request.getCost());
+        subscription.setBillingCycle(request.getBillingCycle());
+        subscription.setCategory(request.getCategory());
+        subscription.setRenewalDate(request.getRenewalDate());
+
+        Subscription updatedSubscription =
+                subscriptionRepository.save(subscription);
+
+        return convertToResponse(updatedSubscription);
+    }
+
+    public void deleteSubscription(
+            Long id,
+            String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Subscription subscription = subscriptionRepository
+                .findById(id)
+                .orElseThrow(() -> new RuntimeException("Subscription not found"));
+
+        if (!subscription.getUser().getId().equals(user.getId())) {
+            throw new RuntimeException("Access denied");
+        }
+
+        subscriptionRepository.delete(subscription);
+    }
+
     private SubscriptionResponse convertToResponse(
             Subscription subscription) {
 
