@@ -2,8 +2,18 @@ package com.subscription.management.dto;
 
 import com.subscription.management.entity.BillingCycle;
 import com.subscription.management.entity.SubscriptionCategory;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.time.LocalDate;
+
+@JsonPropertyOrder({
+        "id",
+        "serviceName",
+        "cost",
+        "billingCycle",
+        "category",
+        "renewalDate"
+})
 
 public class SubscriptionResponse {
 

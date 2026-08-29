@@ -45,6 +45,19 @@ public class SubscriptionController {
         return ResponseEntity.ok(subscriptions);
     }
 
+    @GetMapping("/upcoming")
+    public ResponseEntity<List<SubscriptionResponse>> getUpcomingSubscriptions(
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        List<SubscriptionResponse> subscriptions =
+                subscriptionService.getUpcomingSubscriptions(email);
+
+        return ResponseEntity.ok(subscriptions);
+    }
+
+
     @GetMapping("/{id}")
     public ResponseEntity<SubscriptionResponse> getSubscriptionById(
             @PathVariable Long id,
