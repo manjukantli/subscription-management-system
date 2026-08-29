@@ -23,6 +23,14 @@ public class Subscription {
 
     private LocalDate renewalDate;
 
+    private Integer notificationDaysBefore;
+
+    private boolean inAppNotificationEnabled;
+
+    private boolean emailNotificationEnabled;
+
+    private boolean smsNotificationEnabled;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -76,6 +84,38 @@ public class Subscription {
 
     public void setRenewalDate(LocalDate renewalDate) {
         this.renewalDate = renewalDate;
+    }
+
+    public Integer getNotificationDaysBefore() {
+        return notificationDaysBefore;
+    }
+
+    public void setNotificationDaysBefore(Integer notificationDaysBefore) {
+        this.notificationDaysBefore = notificationDaysBefore;
+    }
+
+    public boolean isInAppNotificationEnabled() {
+        return inAppNotificationEnabled;
+    }
+
+    public void setInAppNotificationEnabled(boolean inAppNotificationEnabled) {
+        this.inAppNotificationEnabled = inAppNotificationEnabled;
+    }
+
+    public boolean isEmailNotificationEnabled() {
+        return emailNotificationEnabled;
+    }
+
+    public void setEmailNotificationEnabled(boolean emailNotificationEnabled) {
+        this.emailNotificationEnabled = emailNotificationEnabled;
+    }
+
+    public boolean isSmsNotificationEnabled() {
+        return smsNotificationEnabled;
+    }
+
+    public void setSmsNotificationEnabled(boolean smsNotificationEnabled) {
+        this.smsNotificationEnabled = smsNotificationEnabled;
     }
 
     public User getUser() {

@@ -2,6 +2,8 @@ package com.subscription.management.dto;
 
 import com.subscription.management.entity.BillingCycle;
 import com.subscription.management.entity.SubscriptionCategory;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -24,6 +26,10 @@ public class SubscriptionRequest {
 
     @NotNull
     private LocalDate renewalDate;
+
+    @Min(1)
+    @Max(30)
+    private int notificationDaysBefore = 7;
 
     public String getServiceName() {
         return serviceName;
@@ -63,5 +69,13 @@ public class SubscriptionRequest {
 
     public void setRenewalDate(LocalDate renewalDate) {
         this.renewalDate = renewalDate;
+    }
+
+    public int getNotificationDaysBefore() {
+        return notificationDaysBefore;
+    }
+
+    public void setNotificationDaysBefore(int notificationDaysBefore) {
+        this.notificationDaysBefore = notificationDaysBefore;
     }
 }

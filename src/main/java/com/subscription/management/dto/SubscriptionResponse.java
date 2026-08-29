@@ -1,8 +1,8 @@
 package com.subscription.management.dto;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.subscription.management.entity.BillingCycle;
 import com.subscription.management.entity.SubscriptionCategory;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.time.LocalDate;
 
@@ -12,9 +12,9 @@ import java.time.LocalDate;
         "cost",
         "billingCycle",
         "category",
-        "renewalDate"
+        "renewalDate",
+        "notificationDaysBefore"
 })
-
 public class SubscriptionResponse {
 
     private Long id;
@@ -23,6 +23,7 @@ public class SubscriptionResponse {
     private BillingCycle billingCycle;
     private SubscriptionCategory category;
     private LocalDate renewalDate;
+    private int notificationDaysBefore;
 
     public Long getId() {
         return id;
@@ -70,5 +71,13 @@ public class SubscriptionResponse {
 
     public void setRenewalDate(LocalDate renewalDate) {
         this.renewalDate = renewalDate;
+    }
+
+    public int getNotificationDaysBefore() {
+        return notificationDaysBefore;
+    }
+
+    public void setNotificationDaysBefore(int notificationDaysBefore) {
+        this.notificationDaysBefore = notificationDaysBefore;
     }
 }

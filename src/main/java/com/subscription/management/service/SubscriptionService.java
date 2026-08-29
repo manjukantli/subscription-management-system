@@ -1,6 +1,7 @@
 package com.subscription.management.service;
 
 import java.time.LocalDate;
+
 import com.subscription.management.dto.DashboardResponse;
 import com.subscription.management.dto.SubscriptionRequest;
 import com.subscription.management.dto.SubscriptionResponse;
@@ -42,6 +43,12 @@ public class SubscriptionService {
         subscription.setBillingCycle(request.getBillingCycle());
         subscription.setCategory(request.getCategory());
         subscription.setRenewalDate(request.getRenewalDate());
+
+        // Notification preference
+        subscription.setNotificationDaysBefore(
+                request.getNotificationDaysBefore()
+        );
+
         subscription.setUser(user);
 
         Subscription savedSubscription =
@@ -62,9 +69,10 @@ public class SubscriptionService {
                 .toList();
     }
 
+    // GET UPCOMING SUBSCRIPTIONS
     public List<SubscriptionResponse> getUpcomingSubscriptions(String email) {
 
-User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         LocalDate today = LocalDate.now();
@@ -79,7 +87,6 @@ User user = userRepository.findByEmail(email)
                 .stream()
                 .map(this::convertToResponse)
                 .toList();
-
     }
 
     // GET SUBSCRIPTION BY ID
@@ -125,6 +132,11 @@ User user = userRepository.findByEmail(email)
         subscription.setBillingCycle(request.getBillingCycle());
         subscription.setCategory(request.getCategory());
         subscription.setRenewalDate(request.getRenewalDate());
+
+        // Update notification preference
+        subscription.setNotificationDaysBefore(
+                request.getNotificationDaysBefore()
+        );
 
         Subscription updatedSubscription =
                 subscriptionRepository.save(subscription);
@@ -233,6 +245,11 @@ User user = userRepository.findByEmail(email)
         response.setBillingCycle(subscription.getBillingCycle());
         response.setCategory(subscription.getCategory());
         response.setRenewalDate(subscription.getRenewalDate());
+
+        // Notification preference
+        response.setNotificationDaysBefore(
+                subscription.getNotificationDaysBefore()
+        );
 
         return response;
     }
