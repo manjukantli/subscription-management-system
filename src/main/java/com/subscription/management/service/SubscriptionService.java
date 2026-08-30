@@ -57,14 +57,62 @@ public class SubscriptionService {
         return convertToResponse(savedSubscription);
     }
 
-    // GET ALL SUBSCRIPTIONS
-    public List<SubscriptionResponse> getAllSubscriptions(String email) {
+    // GET ALL SUBSCRIPTIONS / SEARCH / FILTER
+    public List<SubscriptionResponse> getAllSubscriptions(
+            String email,
+            String search,
+            String category,
+            String billingCycle) {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return subscriptionRepository.findByUser(user)
-                .stream()
+        List<Subscription> subscriptions =
+                subscriptionRepository.findByUser(user);
+
+        return subscriptions.stream()
+                .filter(subscription -> {
+
+                    // SEARCH BY SERVICE NAME
+                    if (search != null && !search.isBlank()) {
+
+                        String serviceName =
+                                subscription.getServiceName();
+
+                        if (serviceName == null ||
+                                !serviceName.toLowerCase()
+                                        .contains(search.toLowerCase())) {
+
+                            return false;
+                        }
+                    }
+
+                    // FILTER BY CATEGORY
+                    if (category != null && !category.isBlank()) {
+
+                        if (subscription.getCategory() == null ||
+                                !subscription.getCategory()
+                                        .name()
+                                        .equalsIgnoreCase(category)) {
+
+                            return false;
+                        }
+                    }
+
+                    // FILTER BY BILLING CYCLE
+                    if (billingCycle != null && !billingCycle.isBlank()) {
+
+                        if (subscription.getBillingCycle() == null ||
+                                !subscription.getBillingCycle()
+                                        .name()
+                                        .equalsIgnoreCase(billingCycle)) {
+
+                            return false;
+                        }
+                    }
+
+                    return true;
+                })
                 .map(this::convertToResponse)
                 .toList();
     }

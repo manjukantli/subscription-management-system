@@ -35,12 +35,20 @@ public class SubscriptionController {
 
     @GetMapping
     public ResponseEntity<List<SubscriptionResponse>> getAllSubscriptions(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String billingCycle,
             Authentication authentication) {
 
         String email = authentication.getName();
 
         List<SubscriptionResponse> subscriptions =
-                subscriptionService.getAllSubscriptions(email);
+                subscriptionService.getAllSubscriptions(
+                        email,
+                        search,
+                        category,
+                        billingCycle
+                );
 
         return ResponseEntity.ok(subscriptions);
     }
@@ -56,7 +64,6 @@ public class SubscriptionController {
 
         return ResponseEntity.ok(subscriptions);
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<SubscriptionResponse> getSubscriptionById(
