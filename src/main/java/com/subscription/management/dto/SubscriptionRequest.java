@@ -29,7 +29,7 @@ public class SubscriptionRequest {
 
     @Min(1)
     @Max(30)
-    private int notificationDaysBefore = 7;
+    private int notificationDaysBefore = 3;
 
     public String getServiceName() {
         return serviceName;

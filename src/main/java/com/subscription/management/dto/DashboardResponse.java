@@ -6,7 +6,6 @@ public class DashboardResponse {
 
     private long totalSubscriptions;
     private double monthlySpending;
-    private double yearlySpending;
     private Map<String, Double> categorySpending;
 
     public DashboardResponse() {
@@ -26,14 +25,6 @@ public class DashboardResponse {
 
     public void setMonthlySpending(double monthlySpending) {
         this.monthlySpending = monthlySpending;
-    }
-
-    public double getYearlySpending() {
-        return yearlySpending;
-    }
-
-    public void setYearlySpending(double yearlySpending) {
-        this.yearlySpending = yearlySpending;
     }
 
     public Map<String, Double> getCategorySpending() {

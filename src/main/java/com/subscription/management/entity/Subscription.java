@@ -23,6 +23,13 @@ public class Subscription {
 
     private LocalDate renewalDate;
 
+    private LocalDate dateAdded = LocalDate.now();
+
+    private LocalDate currentPeriodStartDate;
+
+    @Enumerated(EnumType.STRING)
+    private SubscriptionStatus status = SubscriptionStatus.ACTIVE;
+
     private Integer notificationDaysBefore;
 
     private boolean inAppNotificationEnabled;
@@ -86,6 +93,31 @@ public class Subscription {
         this.renewalDate = renewalDate;
     }
 
+    public LocalDate getDateAdded() {
+        return dateAdded;
+    }
+
+    public void setDateAdded(LocalDate dateAdded) {
+        this.dateAdded = dateAdded;
+    }
+
+    public LocalDate getCurrentPeriodStartDate() {
+        return currentPeriodStartDate;
+    }
+
+    public void setCurrentPeriodStartDate(
+            LocalDate currentPeriodStartDate) {
+        this.currentPeriodStartDate = currentPeriodStartDate;
+    }
+
+    public SubscriptionStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(SubscriptionStatus status) {
+        this.status = status;
+    }
+
     public Integer getNotificationDaysBefore() {
         return notificationDaysBefore;
     }
@@ -98,7 +130,8 @@ public class Subscription {
         return inAppNotificationEnabled;
     }
 
-    public void setInAppNotificationEnabled(boolean inAppNotificationEnabled) {
+    public void setInAppNotificationEnabled(
+            boolean inAppNotificationEnabled) {
         this.inAppNotificationEnabled = inAppNotificationEnabled;
     }
 
@@ -106,7 +139,8 @@ public class Subscription {
         return emailNotificationEnabled;
     }
 
-    public void setEmailNotificationEnabled(boolean emailNotificationEnabled) {
+    public void setEmailNotificationEnabled(
+            boolean emailNotificationEnabled) {
         this.emailNotificationEnabled = emailNotificationEnabled;
     }
 
@@ -114,7 +148,8 @@ public class Subscription {
         return smsNotificationEnabled;
     }
 
-    public void setSmsNotificationEnabled(boolean smsNotificationEnabled) {
+    public void setSmsNotificationEnabled(
+            boolean smsNotificationEnabled) {
         this.smsNotificationEnabled = smsNotificationEnabled;
     }
 

@@ -90,7 +90,8 @@ public class SubscriptionController {
                 subscriptionService.updateSubscription(
                         id,
                         request,
-                        email);
+                        email
+                );
 
         return ResponseEntity.ok(response);
     }
@@ -104,6 +105,34 @@ public class SubscriptionController {
 
         subscriptionService.deleteSubscription(id, email);
 
-        return ResponseEntity.ok("Subscription deleted successfully");
+        return ResponseEntity.ok(
+                "Subscription deleted successfully"
+        );
+    }
+
+    @PostMapping("/{id}/renew")
+    public ResponseEntity<SubscriptionResponse> confirmRenewal(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        SubscriptionResponse response =
+                subscriptionService.confirmRenewal(id, email);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/cancel-renewal")
+    public ResponseEntity<SubscriptionResponse> cancelRenewal(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        SubscriptionResponse response =
+                subscriptionService.cancelRenewal(id, email);
+
+        return ResponseEntity.ok(response);
     }
 }

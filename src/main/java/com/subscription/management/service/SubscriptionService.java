@@ -8,9 +8,11 @@ import com.subscription.management.dto.SubscriptionResponse;
 import com.subscription.management.entity.BillingCycle;
 import com.subscription.management.entity.Subscription;
 import com.subscription.management.entity.User;
+import com.subscription.management.repository.SpendingRecordRepository;
 import com.subscription.management.repository.SubscriptionRepository;
 import com.subscription.management.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import com.subscription.management.entity.SubscriptionStatus;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,41 +23,60 @@ public class SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
+    private final SpendingRecordRepository spendingRecordRepository;
 
-    public SubscriptionService(SubscriptionRepository subscriptionRepository,
-                               UserRepository userRepository) {
-        this.subscriptionRepository = subscriptionRepository;
-        this.userRepository = userRepository;
-    }
+    public SubscriptionService(
+        SubscriptionRepository subscriptionRepository,
+        UserRepository userRepository,
+        SpendingRecordRepository spendingRecordRepository) {
 
-    // ADD SUBSCRIPTION
-    public SubscriptionResponse addSubscription(
-            SubscriptionRequest request,
-            String email) {
+    this.subscriptionRepository = subscriptionRepository;
+    this.userRepository = userRepository;
+    this.spendingRecordRepository = spendingRecordRepository;
+}
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+// ADD SUBSCRIPTION
+public SubscriptionResponse addSubscription(
+        SubscriptionRequest request,
+        String email) {
 
-        Subscription subscription = new Subscription();
+    User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
 
-        subscription.setServiceName(request.getServiceName());
-        subscription.setCost(request.getCost());
-        subscription.setBillingCycle(request.getBillingCycle());
-        subscription.setCategory(request.getCategory());
-        subscription.setRenewalDate(request.getRenewalDate());
+    Subscription subscription = new Subscription();
 
-        // Notification preference
-        subscription.setNotificationDaysBefore(
-                request.getNotificationDaysBefore()
-        );
+    subscription.setServiceName(request.getServiceName());
+    subscription.setCost(request.getCost());
+    subscription.setBillingCycle(request.getBillingCycle());
+    subscription.setCategory(request.getCategory());
 
-        subscription.setUser(user);
+    // Initial billing period
+    subscription.setCurrentPeriodStartDate(
+            request.getRenewalDate()
+    );
 
-        Subscription savedSubscription =
-                subscriptionRepository.save(subscription);
+    subscription.setRenewalDate(
+            request.getRenewalDate()
+    );
 
-        return convertToResponse(savedSubscription);
-    }
+    // Subscription lifecycle
+    subscription.setDateAdded(LocalDate.now());
+    subscription.setStatus(
+            com.subscription.management.entity.SubscriptionStatus.ACTIVE
+    );
+
+    // Notification preference
+    subscription.setNotificationDaysBefore(
+            request.getNotificationDaysBefore()
+    );
+
+    subscription.setUser(user);
+
+    Subscription savedSubscription =
+            subscriptionRepository.save(subscription);
+
+    return convertToResponse(savedSubscription);
+}
 
     // GET ALL SUBSCRIPTIONS / SEARCH / FILTER
     public List<SubscriptionResponse> getAllSubscriptions(
@@ -193,112 +214,252 @@ public class SubscriptionService {
     }
 
     // DELETE SUBSCRIPTION
-    public void deleteSubscription(
-            Long id,
-            String email) {
+// DELETE SUBSCRIPTION
+public void deleteSubscription(
+        Long id,
+        String email) {
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Subscription subscription =
-                subscriptionRepository.findById(id)
-                        .orElseThrow(() ->
-                                new RuntimeException("Subscription not found"));
+    Subscription subscription =
+            subscriptionRepository.findById(id)
+                    .orElseThrow(() ->
+                            new RuntimeException("Subscription not found"));
 
-        if (!subscription.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Access denied");
-        }
-
-        subscriptionRepository.delete(subscription);
+    if (!subscription.getUser().getId().equals(user.getId())) {
+        throw new RuntimeException("Access denied");
     }
+
+    // Delete spending records linked to this subscription first
+    spendingRecordRepository.deleteBySubscriptionId(id);
+
+    // Then delete the subscription
+    subscriptionRepository.delete(subscription);
+}
 
     // DASHBOARD
-    public DashboardResponse getDashboard(String email) {
+    // DASHBOARD
+// DASHBOARD
+public DashboardResponse getDashboard(String email) {
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
 
-        List<Subscription> subscriptions =
-                subscriptionRepository.findByUser(user);
+    List<Subscription> subscriptions =
+            subscriptionRepository.findByUser(user);
 
-        DashboardResponse response = new DashboardResponse();
+    DashboardResponse response = new DashboardResponse();
 
-        response.setTotalSubscriptions(subscriptions.size());
+    long activeSubscriptions = subscriptions.stream()
+        .filter(subscription ->
+                subscription.getStatus() == SubscriptionStatus.ACTIVE)
+        .count();
 
-        double monthlySpending = 0;
-        double yearlySpending = 0;
+response.setTotalSubscriptions(activeSubscriptions);
 
-        Map<String, Double> categorySpending = new HashMap<>();
+    LocalDate today = LocalDate.now();
 
-        for (Subscription subscription : subscriptions) {
+    LocalDate startDate =
+            today.withDayOfMonth(1);
 
-            if (subscription.getBillingCycle() == BillingCycle.MONTHLY) {
-
-                monthlySpending += subscription.getCost();
-                yearlySpending += subscription.getCost() * 12;
-
-            } else if (subscription.getBillingCycle() == BillingCycle.YEARLY) {
-
-                yearlySpending += subscription.getCost();
-                monthlySpending += subscription.getCost() / 12;
-            }
-
-            String category =
-                    subscription.getCategory().name();
-
-            double monthlyCategoryAmount;
-
-            if (subscription.getBillingCycle() == BillingCycle.MONTHLY) {
-                monthlyCategoryAmount = subscription.getCost();
-            } else {
-                monthlyCategoryAmount =
-                        subscription.getCost() / 12;
-            }
-
-            double currentCategoryAmount =
-                    categorySpending.getOrDefault(category, 0.0);
-
-            double updatedCategoryAmount =
-                    currentCategoryAmount + monthlyCategoryAmount;
-
-            categorySpending.put(
-                    category,
-                    Math.round(updatedCategoryAmount * 100.0) / 100.0
+    LocalDate endDate =
+            today.withDayOfMonth(
+                    today.lengthOfMonth()
             );
-        }
 
-        response.setMonthlySpending(
-                Math.round(monthlySpending * 100.0) / 100.0
+    double monthlySpending =
+            spendingRecordRepository.getTotalSpendingBetween(
+                    user,
+                    startDate,
+                    endDate
+            );
+
+    Map<String, Double> categorySpending = new HashMap<>();
+
+    List<com.subscription.management.entity.SpendingRecord> monthlyRecords =
+            spendingRecordRepository.findByUserAndSpentDateBetween(
+                    user,
+                    startDate,
+                    endDate
+            );
+
+    for (com.subscription.management.entity.SpendingRecord record
+            : monthlyRecords) {
+
+        String category =
+                record.getSubscription()
+                        .getCategory()
+                        .name();
+
+        double currentAmount =
+                categorySpending.getOrDefault(category, 0.0);
+
+        categorySpending.put(
+                category,
+                Math.round(
+                        (currentAmount + record.getAmount()) * 100.0
+                ) / 100.0
         );
-
-        response.setYearlySpending(
-                Math.round(yearlySpending * 100.0) / 100.0
-        );
-
-        response.setCategorySpending(categorySpending);
-
-        return response;
     }
 
-    // CONVERT ENTITY TO RESPONSE
-    private SubscriptionResponse convertToResponse(
-            Subscription subscription) {
+    response.setMonthlySpending(
+            Math.round(monthlySpending * 100.0) / 100.0
+    );
 
-        SubscriptionResponse response =
-                new SubscriptionResponse();
+    response.setCategorySpending(categorySpending);
 
-        response.setId(subscription.getId());
-        response.setServiceName(subscription.getServiceName());
-        response.setCost(subscription.getCost());
-        response.setBillingCycle(subscription.getBillingCycle());
-        response.setCategory(subscription.getCategory());
-        response.setRenewalDate(subscription.getRenewalDate());
+    return response;
+}
 
-        // Notification preference
-        response.setNotificationDaysBefore(
-                subscription.getNotificationDaysBefore()
-        );
+// CONFIRM SUBSCRIPTION RENEWAL
+public SubscriptionResponse confirmRenewal(
+        Long subscriptionId,
+        String email) {
 
-        return response;
+    User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+    Subscription subscription =
+            subscriptionRepository.findById(subscriptionId)
+                    .orElseThrow(() ->
+                            new RuntimeException("Subscription not found"));
+
+    if (!subscription.getUser().getId().equals(user.getId())) {
+        throw new RuntimeException("Access denied");
     }
+
+    if (subscription.getStatus() != SubscriptionStatus.ACTIVE) {
+        throw new RuntimeException("Subscription is not active");
+    }
+
+    LocalDate renewalDate = subscription.getRenewalDate();
+
+    // Renewal cannot be confirmed before the renewal date
+    if (LocalDate.now().isBefore(renewalDate)) {
+        throw new RuntimeException(
+                "Subscription cannot be renewed before the renewal date"
+        );
+    }
+
+    // Prevent duplicate renewal for the same subscription/date
+    boolean alreadyRecorded =
+            spendingRecordRepository
+                    .existsBySubscriptionIdAndSpentDate(
+                            subscriptionId,
+                            renewalDate
+                    );
+
+    if (alreadyRecorded) {
+        throw new RuntimeException(
+                "Renewal has already been recorded"
+        );
+    }
+
+    // Create spending record
+    com.subscription.management.entity.SpendingRecord spendingRecord =
+            new com.subscription.management.entity.SpendingRecord();
+
+    spendingRecord.setAmount(subscription.getCost());
+    spendingRecord.setSpentDate(renewalDate);
+    spendingRecord.setUser(user);
+    spendingRecord.setSubscription(subscription);
+
+    spendingRecordRepository.save(spendingRecord);
+
+    // Renewal date becomes the start of the new billing period
+    subscription.setCurrentPeriodStartDate(renewalDate);
+
+    // Calculate next renewal
+    LocalDate nextRenewalDate =
+            calculateNextRenewalDate(
+                    renewalDate,
+                    subscription.getBillingCycle()
+            );
+
+    subscription.setRenewalDate(nextRenewalDate);
+
+    Subscription updatedSubscription =
+            subscriptionRepository.save(subscription);
+
+    return convertToResponse(updatedSubscription);
+}
+
+
+// CANCEL SUBSCRIPTION AFTER RENEWAL WAS NOT MADE
+public SubscriptionResponse cancelRenewal(
+        Long subscriptionId,
+        String email) {
+
+    User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+    Subscription subscription =
+            subscriptionRepository.findById(subscriptionId)
+                    .orElseThrow(() ->
+                            new RuntimeException("Subscription not found"));
+
+    if (!subscription.getUser().getId().equals(user.getId())) {
+        throw new RuntimeException("Access denied");
+    }
+
+    if (subscription.getStatus() != SubscriptionStatus.ACTIVE) {
+        throw new RuntimeException("Subscription is not active");
+    }
+
+    LocalDate today = LocalDate.now();
+
+    if (today.isBefore(subscription.getRenewalDate())) {
+        throw new RuntimeException(
+                "Subscription cannot be cancelled before the renewal date"
+        );
+    }
+
+    subscription.setStatus(SubscriptionStatus.CANCELLED);
+
+    Subscription updatedSubscription =
+            subscriptionRepository.save(subscription);
+
+    return convertToResponse(updatedSubscription);
+}
+
+
+// CALCULATE NEXT RENEWAL DATE
+private LocalDate calculateNextRenewalDate(
+        LocalDate currentDate,
+        BillingCycle billingCycle) {
+
+    return switch (billingCycle) {
+        case WEEKLY -> currentDate.plusWeeks(1);
+        case MONTHLY -> currentDate.plusMonths(1);
+        case YEARLY -> currentDate.plusYears(1);
+    };
+}
+
+
+// CONVERT ENTITY TO RESPONSE
+private SubscriptionResponse convertToResponse(
+        Subscription subscription) {
+
+    SubscriptionResponse response =
+            new SubscriptionResponse();
+
+    response.setId(subscription.getId());
+    response.setServiceName(subscription.getServiceName());
+    response.setCost(subscription.getCost());
+    response.setBillingCycle(subscription.getBillingCycle());
+    response.setCategory(subscription.getCategory());
+    response.setRenewalDate(subscription.getRenewalDate());
+
+    // Subscription lifecycle
+    response.setDateAdded(subscription.getDateAdded());
+    response.setStatus(subscription.getStatus());
+
+    // Notification preference
+    response.setNotificationDaysBefore(
+            subscription.getNotificationDaysBefore()
+    );
+
+    return response;
+}
 }

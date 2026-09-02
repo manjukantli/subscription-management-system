@@ -3,6 +3,7 @@ package com.subscription.management.dto;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.subscription.management.entity.BillingCycle;
 import com.subscription.management.entity.SubscriptionCategory;
+import com.subscription.management.entity.SubscriptionStatus;
 
 import java.time.LocalDate;
 
@@ -13,6 +14,8 @@ import java.time.LocalDate;
         "billingCycle",
         "category",
         "renewalDate",
+        "dateAdded",
+        "status",
         "notificationDaysBefore"
 })
 public class SubscriptionResponse {
@@ -23,6 +26,8 @@ public class SubscriptionResponse {
     private BillingCycle billingCycle;
     private SubscriptionCategory category;
     private LocalDate renewalDate;
+    private LocalDate dateAdded;
+    private SubscriptionStatus status;
     private int notificationDaysBefore;
 
     public Long getId() {
@@ -71,6 +76,22 @@ public class SubscriptionResponse {
 
     public void setRenewalDate(LocalDate renewalDate) {
         this.renewalDate = renewalDate;
+    }
+
+    public LocalDate getDateAdded() {
+        return dateAdded;
+    }
+
+    public void setDateAdded(LocalDate dateAdded) {
+        this.dateAdded = dateAdded;
+    }
+
+    public SubscriptionStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(SubscriptionStatus status) {
+        this.status = status;
     }
 
     public int getNotificationDaysBefore() {
