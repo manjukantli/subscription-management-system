@@ -229,3 +229,42 @@ export async function cancelRenewal(id) {
 
   return response.json()
 }
+export async function getCloudDashboardSummary() {
+  const token = localStorage.getItem('token')
+  const response = await fetch(`${API_BASE_URL}/cloud-costs/dashboard`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!response.ok) {
+    throw new Error('Failed to fetch cloud dashboard summary')
+  }
+  return response.json()
+}
+
+export async function getCloudRecords() {
+  const token = localStorage.getItem('token')
+  const response = await fetch(`${API_BASE_URL}/cloud-costs`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!response.ok) {
+    throw new Error('Failed to fetch cloud cost records')
+  }
+  return response.json()
+}
+
+export async function syncCloudCosts() {
+  const token = localStorage.getItem('token')
+  const response = await fetch(`${API_BASE_URL}/cloud-costs/sync`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!response.ok) {
+    throw new Error('Failed to sync cloud costs')
+  }
+  return response.json()
+}
