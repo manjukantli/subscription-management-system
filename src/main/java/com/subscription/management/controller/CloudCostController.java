@@ -1,5 +1,6 @@
 package com.subscription.management.controller;
 
+import com.subscription.management.dto.CloudCostRequestDto;
 import com.subscription.management.dto.CloudCostResponseDto;
 import com.subscription.management.dto.CloudDashboardSummaryDto;
 import com.subscription.management.entity.CloudProvider;
@@ -32,6 +33,23 @@ public class CloudCostController {
     public ResponseEntity<List<CloudCostResponseDto>> getCloudRecords(Authentication authentication) {
         User user = getAuthenticatedUser(authentication);
         return ResponseEntity.ok(cloudCostService.getUserCloudRecords(user));
+    }
+
+    @PostMapping
+    public ResponseEntity<CloudCostResponseDto> addCloudRecord(
+            @RequestBody CloudCostRequestDto request,
+            Authentication authentication) {
+        User user = getAuthenticatedUser(authentication);
+        return ResponseEntity.ok(cloudCostService.addCloudRecord(user, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCloudRecord(
+            @PathVariable Long id,
+            Authentication authentication) {
+        User user = getAuthenticatedUser(authentication);
+        cloudCostService.deleteCloudRecord(user, id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/provider/{provider}")

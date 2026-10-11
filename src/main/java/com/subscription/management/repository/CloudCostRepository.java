@@ -22,8 +22,13 @@ public interface CloudCostRepository extends JpaRepository<CloudCostRecord, Long
     List<CloudCostRecord> findByUserAndBillingDateBetweenOrderByBillingDateAsc(
             User user, LocalDate startDate, LocalDate endDate);
 
+    void deleteByUser(User user);
+
     @Query("SELECT COALESCE(SUM(c.cost), 0) FROM CloudCostRecord c WHERE c.user = :user")
     BigDecimal getTotalCloudCostByUser(@Param("user") User user);
+
+    @Query("SELECT COALESCE(SUM(c.creditsRemaining), 0) FROM CloudCostRecord c WHERE c.user = :user")
+    BigDecimal getTotalRemainingCreditsByUser(@Param("user") User user);
 
     @Query("SELECT c.provider, COALESCE(SUM(c.cost), 0) FROM CloudCostRecord c WHERE c.user = :user GROUP BY c.provider")
     List<Object[]> getSpendingByProvider(@Param("user") User user);

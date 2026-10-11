@@ -90,4 +90,26 @@ public class NotificationService {
 
         return notificationRepository.save(notification);
     }
+
+    public Notification createCloudAnomalyNotification(User user, String serviceName, java.math.BigDecimal cost) {
+        Notification notification = new Notification();
+        notification.setMessage("Cloud Cost Anomaly: Sudden spend spike detected for " + serviceName + " (₹" + cost + ")");
+        notification.setRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notification.setType(NotificationType.CLOUD_COST_ANOMALY);
+        notification.setUser(user);
+        notification.setSubscription(null);
+        return notificationRepository.save(notification);
+    }
+
+    public Notification createCloudCreditLowNotification(User user, java.math.BigDecimal remainingCredits) {
+        Notification notification = new Notification();
+        notification.setMessage("Cloud Credits Alert: Remaining balance low at ₹" + remainingCredits);
+        notification.setRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
+        notification.setType(NotificationType.CLOUD_LOW_CREDITS);
+        notification.setUser(user);
+        notification.setSubscription(null);
+        return notificationRepository.save(notification);
+    }
 }

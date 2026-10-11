@@ -268,3 +268,31 @@ export async function syncCloudCosts() {
   }
   return response.json()
 }
+export async function addCloudRecord(payload) {
+  const token = localStorage.getItem('token')
+  const response = await fetch(`${API_BASE_URL}/cloud-costs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  })
+  if (!response.ok) {
+    throw new Error('Failed to create cloud cost record')
+  }
+  return response.json()
+}
+
+export async function deleteCloudRecord(id) {
+  const token = localStorage.getItem('token')
+  const response = await fetch(`${API_BASE_URL}/cloud-costs/${id}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  if (!response.ok) {
+    throw new Error('Failed to delete cloud cost record')
+  }
+}
