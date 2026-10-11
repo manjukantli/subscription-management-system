@@ -241,76 +241,63 @@ public void deleteSubscription(
     // DASHBOARD
     // DASHBOARD
 // DASHBOARD
-public DashboardResponse getDashboard(String email) {
+    public DashboardResponse getDashboard(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-    User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+        List<Subscription> subscriptions = subscriptionRepository.findByUser(user);
+        DashboardResponse response = new DashboardResponse();
 
-    List<Subscription> subscriptions =
-            subscriptionRepository.findByUser(user);
+        List<Subscription> activeList = subscriptions.stream()
+                .filter(s -> s.getStatus() == null || s.getStatus() == SubscriptionStatus.ACTIVE)
+                .toList();
 
-    DashboardResponse response = new DashboardResponse();
+        response.setTotalSubscriptions(activeList.size());
 
-    long activeSubscriptions = subscriptions.stream()
-        .filter(subscription ->
-                subscription.getStatus() == SubscriptionStatus.ACTIVE)
-        .count();
+        LocalDate today = LocalDate.now();
+        LocalDate startDate = today.withDayOfMonth(1);
+        LocalDate endDate = today.withDayOfMonth(today.lengthOfMonth());
 
-response.setTotalSubscriptions(activeSubscriptions);
+        double recordedMonthlySpending = spendingRecordRepository.getTotalSpendingBetween(user, startDate, endDate);
+        Map<String, Double> categorySpending = new HashMap<>();
 
-    LocalDate today = LocalDate.now();
+        if (recordedMonthlySpending > 0) {
+            List<com.subscription.management.entity.SpendingRecord> monthlyRecords =
+                    spendingRecordRepository.findByUserAndSpentDateBetween(user, startDate, endDate);
 
-    LocalDate startDate =
-            today.withDayOfMonth(1);
+            for (com.subscription.management.entity.SpendingRecord record : monthlyRecords) {
+                String category = record.getSubscription() != null && record.getSubscription().getCategory() != null
+                        ? record.getSubscription().getCategory().name() : "OTHERS";
+                double currentAmount = categorySpending.getOrDefault(category, 0.0);
+                categorySpending.put(category, Math.round((currentAmount + record.getAmount()) * 100.0) / 100.0);
+            }
+            response.setMonthlySpending(Math.round(recordedMonthlySpending * 100.0) / 100.0);
+        } else {
+            double calculatedMonthlySpending = 0.0;
+            for (Subscription sub : activeList) {
+                double subCost = sub.getCost();
+                double monthlyNormalized = subCost;
 
-    LocalDate endDate =
-            today.withDayOfMonth(
-                    today.lengthOfMonth()
-            );
+                if (sub.getBillingCycle() == BillingCycle.YEARLY) {
+                    monthlyNormalized = subCost / 12.0;
+                } else if (sub.getBillingCycle() == BillingCycle.WEEKLY) {
+                    monthlyNormalized = subCost * 4.333;
+                }
 
-    double monthlySpending =
-            spendingRecordRepository.getTotalSpendingBetween(
-                    user,
-                    startDate,
-                    endDate
-            );
+                calculatedMonthlySpending += monthlyNormalized;
 
-    Map<String, Double> categorySpending = new HashMap<>();
+                String category = sub.getCategory() != null ? sub.getCategory().name() : "OTHERS";
+                categorySpending.put(
+                        category,
+                        Math.round((categorySpending.getOrDefault(category, 0.0) + monthlyNormalized) * 100.0) / 100.0
+                );
+            }
+            response.setMonthlySpending(Math.round(calculatedMonthlySpending * 100.0) / 100.0);
+        }
 
-    List<com.subscription.management.entity.SpendingRecord> monthlyRecords =
-            spendingRecordRepository.findByUserAndSpentDateBetween(
-                    user,
-                    startDate,
-                    endDate
-            );
-
-    for (com.subscription.management.entity.SpendingRecord record
-            : monthlyRecords) {
-
-        String category =
-                record.getSubscription()
-                        .getCategory()
-                        .name();
-
-        double currentAmount =
-                categorySpending.getOrDefault(category, 0.0);
-
-        categorySpending.put(
-                category,
-                Math.round(
-                        (currentAmount + record.getAmount()) * 100.0
-                ) / 100.0
-        );
+        response.setCategorySpending(categorySpending);
+        return response;
     }
-
-    response.setMonthlySpending(
-            Math.round(monthlySpending * 100.0) / 100.0
-    );
-
-    response.setCategorySpending(categorySpending);
-
-    return response;
-}
 
 // CONFIRM SUBSCRIPTION RENEWAL
 public SubscriptionResponse confirmRenewal(
